@@ -1,0 +1,20 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+software="/home/USSR/smb208/Projects/Software"
+
+ref="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie/viruses/genome"
+
+R1=`ls $prefix/trim/$1.R1_val_1.fq.gz`
+R2=`ls $prefix/trim/$1.R2_val_2.fq.gz`
+
+mkdir -p $prefix/alignment_viruses
+mkdir -p $prefix/alignment_viruses/unmapped
+mkdir -p $prefix/alignment_viruses/mapped
+
+bowtie -S -y -M 1 -p 20 --best --strata --fr --minins 10 --maxins 500 --nomaqround --chunkmbs 1024 --no-unal $ref -1 <(zcat $R1) -2 <(zcat $R2) | samtools view -Su - | samtools sort - > $prefix/alignment_viruses/mapped/$1.bam
+# -M 1 => report one alignment at random (if there are more than one)
+# -v 3 => max 3 mismatches
+# -n 2 => max 2 mismatches in seed length (seed is best 28 bases; cannot be used with -v)
+
+#rm $prefix/trim/$1.R*.fq.gz

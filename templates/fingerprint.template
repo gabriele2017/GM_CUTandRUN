@@ -1,0 +1,10 @@
+#!/bin/sh
+
+pwd="__PWD__"
+prefix="__PREFIX__"
+
+mkdir -p $prefix/QC/fingerprint
+
+files=`ls $prefix/alignment/merged/*.sorted.ddup.bam`
+
+plotFingerprint  -b $files -p 20 --centerReads --smartLabels --minMappingQuality 30 --skipZeros -T "Fingerprints of different samples" --plotFile $prefix/QC/fingerprint/QC_fingerprints.svg --outRawCounts $prefix/QC/fingerprint/QC_fingerprints.tab --outQualityMetrics $prefix/QC/fingerprint/quality_metris.txt

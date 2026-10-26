@@ -1,0 +1,23 @@
+#!/bin/bash
+# Count the number of peaks with FC >10 and >20
+
+prefix="__PREFIX__"
+
+files=`ls $prefix/macs2/*/*/*.xls`
+
+printf "Sample\t0\t5\t10\t20\n"
+
+for file in $files
+do
+	type=`echo $file | cut -d'/' -f9`
+	name=`echo $file | cut -d'/' -f11 | sed -e 's/_peaks.xls//g'`
+
+	count=`cat $file | grep -v "^#" | sed 1d | awk '\$8>0' | sed 1d | wc -l`
+	printf "$type/$name\t$count\t";
+	count=`cat $file | grep -v "^#" | awk '\$8>5' | sed 1d | wc -l`
+	printf "$count\t";
+	count=`cat $file | grep -v "^#" | awk '\$8>10' | sed 1d | wc -l`
+	printf "$count\t";
+	count=`cat $file | grep -v "^#" | awk '\$8>20' | sed 1d | wc -l`
+	printf "$count\n";
+done

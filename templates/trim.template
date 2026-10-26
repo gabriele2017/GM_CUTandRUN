@@ -1,0 +1,10 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+mkdir -p $prefix/trim
+
+R1="../data/$1.R1.fq.gz"
+R2="../data/$1.R2.fq.gz"
+
+trim_galore --paired --gzip --stringency 6 -q 20 --output_dir $prefix/trim --fastqc $R1 $R2

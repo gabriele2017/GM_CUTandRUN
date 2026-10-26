@@ -1,0 +1,48 @@
+#!/bin/sh
+
+pwd="__PWD__"
+prefix="__PREFIX__"
+mkdir -p $prefix/deepTools_te
+
+out="$prefix/deepTools_te/bigWig"
+out2="$prefix/deepTools_te/matrix"
+mkdir -p $out
+mkdir -p $out2
+
+file=`ls $prefix/alignment_te/mapped/merged/$1.bam`
+
+samtools index $file
+
+name=$1
+bed="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie2/te_fused/te_fused.bed"
+
+Fa="0.000359602"; Fu="0.000503523"; Fad="0.000198241"; Fud="0.000341891"; # Using all successful libraries, excluding four failed libraries
+
+# Scale to E. coli spike-in and to genomic alignment
+N_te=`cat $prefix/alignment_te/mapped/merged/counts/$1.counts.uniq.txt`
+N_ecoli=`cat $prefix/alignment/merged/counts/$1.counts.uniq.ecoli.txt`
+N=`cat $prefix/alignment/merged/counts/$1.counts.uniq.txt`
+# F/(N_ecoli/N) * N_te/N = F*N_te/N_ecoli
+scaleFactor=$(echo "scale=6; $Fu*$N_te/$N_ecoli" | bc)
+cmd="bamCoverage -b $file -o $out/$name.all.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads  --scaleFactor $scaleFactor --exactScaling --skipNonCoveredRegions"
+echo $cmd
+$cmd
+
+# Scale to E. coli spike-in and to genomic alignment
+N_te=`cat $prefix/alignment_te/mapped/merged/counts/$1.counts.all.txt`
+N_ecoli=`cat $prefix/alignment/merged/counts/$1.counts.all.ecoli.txt`
+N=`cat $prefix/alignment/merged/counts/$1.counts.all.txt`
+# F/(N_ecoli/N) * N_te/N = F*N_te/N_ecoli
+scaleFactor=$(echo "scale=6; $Fa*$N_te/$N_ecoli" | bc)
+cmd="bamCoverage -b $file -o $out/$name.uniq.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads  --scaleFactor $scaleFactor --exactScaling --skipNonCoveredRegions --minMappingQuality 255"
+echo $cmd
+$cmd
+
+cmd="computeMatrix scale-regions -R $bed --binSize 10 -S $out/$name.all.bw -b 0 -a 0 -m 5000 -o $out2/$name.all.gz -p 4 --sortRegion ascend"
+echo $cmd
+$cmd
+
+cmd="computeMatrix scale-regions -R $bed --binSize 10 -S $out/$name.uniq.bw -b 0 -a 0 -m 5000 -o $out2/$name.uniq.gz -p 4 --sortRegion ascend"
+echo $cmd
+$cmd
+

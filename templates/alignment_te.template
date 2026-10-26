@@ -1,0 +1,35 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+software="/home/USSR/smb208/Projects/Software"
+
+ref="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie/te_cvirus/genome"
+
+R1=`ls $prefix/trim/$1.R1_val_1.fq.gz`
+R2=`ls $prefix/trim/$1.R2_val_2.fq.gz`
+
+mkdir -p $prefix/alignment_te
+mkdir -p $prefix/alignment_te/unmapped
+mkdir -p $prefix/alignment_te/mapped
+
+rm $prefix/alignment_te/unmapped/$1.max*_
+rm $prefix/alignment_te/unmapped/${1}_[12]*
+
+mkfifo $prefix/alignment_te/unmapped/$1.max_1.fq
+mkfifo $prefix/alignment_te/unmapped/$1.max_2.fq
+cat $prefix/alignment_te/unmapped/$1.max_1.fq > /dev/null &
+cat $prefix/alignment_te/unmapped/$1.max_2.fq > /dev/null &
+
+mkfifo $prefix/alignment_te/unmapped/${1}_1.fq
+mkfifo $prefix/alignment_te/unmapped/${1}_2.fq
+cat $prefix/alignment_te/unmapped/${1}_1.fq | awk '/^@/ {$0=$1} 1' | gzip -c > $prefix/alignment_te/unmapped/${1}.R1.fq.gz &
+cat $prefix/alignment_te/unmapped/${1}_2.fq | awk '/^@/ {$0=$1} 1' | gzip -c > $prefix/alignment_te/unmapped/${1}.R2.fq.gz &
+
+bowtie -S -y -M 1 -p 20 --best --strata --fr --minins 10 --maxins 500 --nomaqround --chunkmbs 1024 --max $prefix/alignment_te/unmapped/$1.max.fq --un $prefix/alignment_te/unmapped/$1.fq --no-unal $ref -1 $R1 -2 $R2 | samtools view -Su - | samtools sort -m 80G - > $prefix/alignment_te/mapped/$1.bam
+# -M 1 => report one alignment at random (if there are more than one)
+# -v 3 => max 3 mismatches
+# -n 2 => max 2 mismatches in seed length (seed is best 28 bases; cannot be used with -v)
+
+#rm $prefix/trim/$1.R*.fq.gz
+rm $prefix/alignment_te/unmapped/$1.max_[12].fq
+rm $prefix/alignment_te/unmapped/${1}_[12].fq

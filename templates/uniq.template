@@ -1,0 +1,9 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+folder="$prefix/alignment/tophat_d1"
+mkdir -p $folder/uniq
+
+samtools view -q50 -b $folder/$1/accepted_hits.bam > $folder/uniq/$1.bam
+samtools index $folder/uniq/$1.bam

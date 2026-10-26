@@ -1,0 +1,44 @@
+#!/bin/sh
+
+pwd="__PWD__"
+prefix="__PREFIX__"
+mkdir -p $prefix/deepTools_ind
+
+out="$prefix/deepTools_ind/bigWig"
+mkdir -p $out
+
+blacklist="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/annotation/dm6-blacklist.v2.bed"
+name=$1
+
+file=`ls $prefix/alignment/merged/$1.sorted.bam`
+
+N_all=`cat $prefix/alignment/merged/counts/$1.counts.all.txt`
+N=`cat $prefix/alignment/merged/counts/$1.counts.all.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.all.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --skipNonCoveredRegions"
+echo $cmd
+$cmd
+
+N_all=`cat $prefix/alignment/merged/counts/$1.counts.all.txt`
+N=`cat $prefix/alignment/merged/counts/$1.counts.uniq.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.uniq.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --skipNonCoveredRegions --minMappingQuality 255"
+echo $cmd
+$cmd
+
+file=`ls $prefix/alignment/merged/$1.sorted.ddup.bam`
+
+N_all=`cat $prefix/alignment/merged/counts/$1.ddup.counts.all.txt`
+N=`cat $prefix/alignment/merged/counts/$1.ddup.counts.all.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.all.ddup.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --skipNonCoveredRegions"
+echo $cmd
+$cmd
+
+N_all=`cat $prefix/alignment/merged/counts/$1.ddup.counts.all.txt`
+N=`cat $prefix/alignment/merged/counts/$1.ddup.counts.uniq.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.uniq.ddup.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --skipNonCoveredRegions --minMappingQuality 255"
+echo $cmd
+$cmd
+

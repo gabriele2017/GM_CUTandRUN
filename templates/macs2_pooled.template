@@ -1,0 +1,24 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+target="$prefix/alignment/merged/pooled/$1.bam"
+
+replicate=`echo $1 | cut -d'.' -f2`
+ab=`echo $1 | cut -d'.' -f1 | cut -d'-' -f2-3`
+
+mkdir -p $prefix/macs2/
+mkdir -p $prefix/macs2/pooled
+mkdir -p $prefix/macs2/pooled/$1
+
+# Shift bg for use with input samples
+if [[ "$1" == *"input"* ]]; then
+	tmp="$ab"
+	if [[ "$tmp" == "si-gfp" ]]; then ab="si-ctp"; fi
+	if [[ "$tmp" == "si-ctp" ]]; then ab="si-gfp"; fi
+fi
+
+input=`ls $prefix/alignment/merged/pooled/input-$ab.bam`
+
+
+macs2 callpeak -t $target -c $input -g dm -n $1 --outdir $prefix/macs2/pooled/$1 -q 0.01 --call-summits

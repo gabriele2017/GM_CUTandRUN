@@ -1,0 +1,28 @@
+#!/bin/sh
+
+pwd="__PWD__"
+prefix="__PREFIX__"
+mkdir -p $prefix/deepTools
+
+out="$prefix/deepTools/bigWig"
+mkdir -p $out
+
+file=`ls $prefix/alignment/merged/pooled/$1.bam`
+
+samtools index $file
+
+name=$1
+
+N_all=`cat $prefix/alignment/merged/pooled/counts/$1.counts.all.txt`
+N=`cat $prefix/alignment/merged/pooled/counts/$1.counts.all.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.all.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --skipNonCoveredRegions"
+echo $cmd
+`$cmd`
+
+N_all=`cat $prefix/alignment/merged/pooled/counts/$1.counts.all.txt`
+N=`cat $prefix/alignment/merged/pooled/counts/$1.counts.uniq.txt`
+scaleFactor=$(echo "scale=6; ($N/$N_all)" | bc)
+cmd="bamCoverage -b $file -o $out/$name.uniq.bw --binSize 1 --ignoreForNormalization chrM -p 4 --normalizeUsing CPM --extendReads --centerReads --exactScaling --scaleFactor $scaleFactor --minMappingQuality 255 --skipNonCoveredRegions"
+echo $cmd
+`$cmd`

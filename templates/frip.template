@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Calculate FRiP as reads aligning into peaks divided by all reads aligned
+
+prefix="__PREFIX__"
+digits="__DIGITS__"
+
+files=`ls $prefix/alignment/merged/*.bam`
+
+mkdir -p $prefix/QC
+mkdir -p $prefix/QC/FRiP
+mkdir -p $prefix/QC/FRiP/bed
+mkdir -p $prefix/QC/FRiP/peaks
+
+for file in $files
+do
+	name=`echo $file | cut -d'/' -f10 | cut -d'.' -f1-$((digits-1))`
+
+	# Convert to bed
+	bedtools bamtobed -i $file | sort -k1,1 -k2,2n > $prefix/QC/FRiP/bed/$name.bed
+
+	# Intersect
+	target=`echo $name | cut -d'.' -f1`
+
+	if [[ "$target" != "input"* ]]; then
+		total=`wc -l $prefix/QC/FRiP/bed/$name.bed | cut -d' ' -f1`
+
+		sort -k1,1 -k2,2n $prefix/macs2/repl/$name/"$name"_peaks.narrowPeak > $prefix/QC/FRiP/peaks/$name.bed
+#		ln -s $prefix/macs2/repl/$name/"$name"_peaks.narrowPeak $prefix/QC/FRiP/peaks/$name.bed 2> /dev/null
+#		hits=`bedtools intersect -a $prefix/QC/FRiP/bed/$name.bed -b $prefix/QC/FRiP/peaks/$name.bed -u -sorted -g /mnt/scratchb/ghlab/sus/REFERENCE/dmelanogaster6/dm6.genome | wc -l | cut -d' ' -f1`
+		hits=`bedtools intersect -a $prefix/QC/FRiP/bed/$name.bed -b $prefix/QC/FRiP/peaks/$name.bed -u -sorted | wc -l | cut -d' ' -f1`
+
+		echo $name $total $hits
+	fi
+
+done

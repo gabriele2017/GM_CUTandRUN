@@ -1,0 +1,134 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+pwd="__PWD__"
+digits="__DIGITS__"
+
+techs=`ls -1 $prefix/alignment/*.bam | cut -d'/' -f9 | sed -e 's/.bam//g'`
+
+unset all_total; declare -A all_total
+unset all_trimmed; declare -A all_trimmed
+unset all_mapped1; declare -A all_mapped1
+unset all_mapped; declare -A all_mapped
+unset all_multi; declare -A all_multi
+unset all_uniq; declare -A all_uniq
+
+for tech in $techs
+do
+	printf "$tech\t"
+
+	total=`cat $prefix/trim/$tech.R1.fq.gz_trimming_report.txt | grep "Total reads processed:" | awk '{print $4}' | sed -e 's/,//g'`
+	printf "$total\t"
+
+	trimmed_multi=`cat $pwd/alignment/log/$tech | grep "reads processed" | awk '{print $4}'`
+	multi=`cat $pwd/alignment/log/$tech | grep "reads with alignments sampled" | awk '{print $9}'`
+	trimmed=$((trimmed_multi-multi))
+	printf "$trimmed\t"
+
+	trimmed_perc=`echo "scale=4; $trimmed/$total" | bc -l`
+	printf "$trimmed_perc\t"
+
+	mapped=`cat $pwd/alignment/log/$tech | grep "reads with at least one reported" | awk '{print $9}'`
+	printf "$mapped\t"
+
+	mapped_perc=`echo "scale=4; $mapped/($trimmed)" | bc -l`
+	printf "$mapped_perc\t"
+
+	printf "$multi\t"
+
+	multi_perc=`echo "scale=4; $multi/$trimmed" | bc -l`
+	printf "$multi_perc\t"
+
+	uniq=$((mapped-multi))
+	printf "$uniq\t"
+
+	uniq_perc=`echo "scale=4; $uniq/$trimmed" | bc -l`
+	printf "$uniq_perc\t"
+
+	printf "\n"
+
+	all_total["$tech"]="$total"
+	all_trimmed["$tech"]="$trimmed"
+	all_mapped1["$tech"]="$mapped1"
+	all_mapped["$tech"]="$mapped"
+	all_multi["$tech"]="$multi"
+	all_uniq["$tech"]="$uniq"
+done
+
+printf "\n##################\n\n"
+
+repls=`ls $prefix/alignment/*.bam | cut -d'/' -f9 | cut -d'.' -f1-$((digits-1)) | uniq`
+
+for repl in $repls
+do
+	total=0; trimmed=0; mapped=0; multi=0; uniq=0;
+
+	techs=`ls -1 $prefix/alignment/$repl.*.bam | cut -d'/' -f9 | cut -d'.' -f1-$digits`
+	for tech in $techs
+	do
+		total=$((total+all_total["$tech"]))
+		trimmed=$((trimmed+all_trimmed["$tech"]))
+		mapped1=$((mapped1+all_mapped1["$tech"]))
+		mapped=$((mapped+all_mapped["$tech"]))
+		multi=$((multi+all_multi["$tech"]))
+		uniq=$((uniq+all_uniq["$tech"]))
+	done
+
+	trimmed_perc=`echo "scale=4; $trimmed/$total" | bc -l`
+	mapped_perc=`echo "scale=4; $mapped/($trimmed)" | bc -l`
+	multi_perc=`echo "scale=4; $multi/$trimmed" | bc -l`
+
+	printf "$repl\t$total\t$trimmed\t$trimmed_perc\t$mapped\t$mapped_perc\t$multi\t$multi_perc\t$uniq\n"
+done
+
+printf "\n##################\n\n"
+
+samples=`ls $prefix/alignment/*.bam | cut -d'/' -f9 | cut -d'.' -f1-$((digits-2)) | uniq`
+
+for sample in $samples
+do
+	total=0; trimmed=0; mapped=0; multi=0; uniq=0;
+
+	techs=`ls -1 $prefix/alignment/$sample.*.bam | cut -d'/' -f9 | cut -d'.' -f1-$digits`
+	for tech in $techs
+	do
+		total=$((total+all_total["$tech"]))
+		trimmed=$((trimmed+all_trimmed["$tech"]))
+		mapped=$((mapped+all_mapped["$tech"]))
+		multi=$((multi+all_multi["$tech"]))
+		uniq=$((uniq+all_uniq["$tech"]))
+	done
+
+	trimmed_perc=`echo "scale=4; $trimmed/$total" | bc -l`
+	mapped_perc=`echo "scale=4; $mapped/($trimmed)" | bc -l`
+	multi_perc=`echo "scale=4; $multi/$trimmed" | bc -l`
+
+	printf "$sample\t$total\t$trimmed\t$trimmed_perc\t$mapped\t$mapped_perc\t$multi\t$multi_perc\t$uniq\n"
+done
+
+printf "\n##################\n\n"
+
+samples=`ls $prefix/alignment/*.bam | cut -d'/' -f9 | cut -d'.' -f1-$((digits-3)) | sort | uniq`
+
+for sample in $samples
+do
+	total=0; trimmed=0; mapped=0; multi=0; uniq=0;
+
+	techs=`ls -1 $prefix/alignment/$sample.*.bam | cut -d'/' -f9 | cut -d'.' -f1-$digits`
+	for tech in $techs
+	do
+		total=$((total+all_total["$tech"]))
+		trimmed=$((trimmed+all_trimmed["$tech"]))
+		mapped1=$((mapped1+all_mapped1["$tech"]))
+		mapped=$((mapped+all_mapped["$tech"]))
+		multi=$((multi+all_multi["$tech"]))
+		uniq=$((uniq+all_uniq["$tech"]))
+	done
+
+	trimmed_perc=`echo "scale=4; $trimmed/$total" | bc -l`
+	mapped_perc=`echo "scale=4; $mapped/($trimmed)" | bc -l`
+	multi_perc=`echo "scale=4; $multi/$trimmed" | bc -l`
+
+	printf "$sample\t$total\t$trimmed\t$trimmed_perc\t$mapped\t$mapped_perc\t$multi\t$multi_perc\t$uniq\n"
+done
+

@@ -1,0 +1,41 @@
+#!/bin/bash 
+
+pwd="__PWD__"
+prefix="__PREFIX__"
+picard="/home/bioinformatics/software/java/java21/bin/java -Xmx14g -jar /Users/miglio01/bin/picard.jar"
+blacklist="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/annotation/dm6-blacklist.v2.bed"
+
+techs=`ls $prefix/alignment/$1.*.bam`
+words=`echo $techs | wc -w`
+
+mkdir -p $prefix/alignment/merged
+
+rm $prefix/alignment/merged/$1.sorted.bam
+
+if [ $words -ge 2 ]; then
+	samtools merge $prefix/alignment/merged/$1.sorted.bam $techs
+	rm $techs
+else
+	ln -s $techs $prefix/alignment/merged/$1.sorted.bam
+fi
+samtools addreplacerg -r "@RG\tID:ReadGroup1\tSM:SampleName\tPL:Illumina\tLB:Library.fa" -o $prefix/alignment/merged/$1.sorted2.bam $prefix/alignment/merged/$1.sorted.bam
+
+samtools sort $prefix/alignment/merged/$1.sorted2.bam > $prefix/alignment/merged/$1.sorted.bam
+rm $prefix/alignment/merged/$1.sorted2.bam
+samtools index $prefix/alignment/merged/$1.sorted.bam
+
+samtools flagstat $prefix/alignment/merged/$1.sorted.bam > $prefix/alignment/merged/$1.flagstat
+
+$picard MarkDuplicates -INPUT $prefix/alignment/merged/$1.sorted.bam -OUTPUT $prefix/alignment/merged/$1.sorted.ddup.bam -ASSUME_SORTED true -REMOVE_DUPLICATES true -M $pwd/alignment/log/$1_ddup.log
+samtools index $prefix/alignment/merged/$1.sorted.ddup.bam
+
+mkdir -p $prefix/alignment/merged/counts
+samtools view $prefix/alignment/merged/$1.sorted.bam | grep -v ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/counts/$1.counts.all.txt
+samtools view $prefix/alignment/merged/$1.sorted.bam | grep -v ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/counts/$1.counts.uniq.txt
+samtools view $prefix/alignment/merged/$1.sorted.ddup.bam | grep -v ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/counts/$1.ddup.counts.all.txt
+samtools view $prefix/alignment/merged/$1.sorted.ddup.bam | grep -v ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/counts/$1.ddup.counts.uniq.txt
+
+samtools view $prefix/alignment/merged/$1.sorted.bam | grep ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/counts/$1.counts.all.ecoli.txt
+samtools view $prefix/alignment/merged/$1.sorted.bam | grep ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/counts/$1.counts.uniq.ecoli.txt
+samtools view $prefix/alignment/merged/$1.sorted.ddup.bam | grep ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/counts/$1.ddup.counts.all.ecoli.txt
+samtools view $prefix/alignment/merged/$1.sorted.ddup.bam | grep ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/counts/$1.ddup.counts.uniq.ecoli.txt

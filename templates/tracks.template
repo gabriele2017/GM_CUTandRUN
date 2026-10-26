@@ -1,0 +1,21 @@
+#!/bin/sh
+
+prefix="__PREFIX__"
+chrom_sizes="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/dm6.chrom.sizes"
+
+bam="$prefix/alignment/merged/$1.sorted.ddup.bam"
+
+mkdir -p $prefix/tracks
+mkdir -p $prefix/tracks/bedGraph
+mkdir -p $prefix/tracks/bigWig
+
+printf "$bam\t"
+mappedReads=`samtools view -c -F 4 $bam`
+printf "$mappedReads\t"
+scalingFactor=$(echo "scale=5; 1000000/$mappedReads" | bc)
+printf "$scalingFactor\n"
+name=`echo $bam | cut -d'/' -f10 | sed -e 's/.sorted.ddup.bam//'`
+bedtools genomecov -ibam $bam -bg -scale $scalingFactor -g $chrom_sizes -split | grep -v GL | grep -v JH | LC_COLLATE=C sort -k1,1 -k2,2n > $prefix/tracks/bedGraph/$name.bedGraph
+bedGraphToBigWig $prefix/tracks/bedGraph/$name.bedGraph $chrom_sizes $prefix/tracks/bigWig/$name.bw
+
+rm $prefix/tracks/bedGraph/$name.bedGraph

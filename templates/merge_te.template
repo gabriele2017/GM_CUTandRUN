@@ -1,0 +1,25 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+techs=`ls $prefix/alignment_te/mapped/$1.*.bam`
+words=`echo $techs | wc -w`
+
+mkdir -p $prefix/alignment_te/mapped/merged
+
+rm -f $prefix/alignment_te/mapped/merged/$1.bam
+
+if [ $words -ge 2 ]; then
+	samtools merge $prefix/alignment_te/mapped/merged/$1.bam $techs
+else
+        cp $techs $prefix/alignment_te/mapped/merged/$1.bam 	
+#ln -s $techs $prefix/alignment_te/mapped/merged/$1.bam
+fi
+
+samtools index $prefix/alignment_te/mapped/merged/$1.bam
+
+samtools flagstat $prefix/alignment_te/mapped/merged/$1.bam > $prefix/alignment_te/mapped/merged/$1.flagstat
+
+mkdir -p $prefix/alignment_te/mapped/merged/counts
+cat $prefix/alignment_te/mapped/merged/$1.flagstat | grep "in total" | cut -d' ' -f1 > $prefix/alignment_te/mapped/merged/counts/$1.counts.all.txt
+samtools view $prefix/alignment_te/mapped/merged/$1.bam | awk '$5==255' | wc -l > $prefix/alignment_te/mapped/merged/counts/$1.counts.uniq.txt

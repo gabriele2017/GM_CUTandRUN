@@ -1,0 +1,54 @@
+#!/bin/sh
+
+prefix="__PREFIX__"
+pwd="__PWD__"
+
+annotation="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie2/te_fused/te_fused.gtf"
+
+# Compute expression of the sense strand
+
+mkdir -p $pwd/countreads_te/results
+
+# Using data that will contain many tRNA reads
+files=`ls $prefix/alignment_te/mapped/merged/*.bam`
+
+# s1 = forward, s2 = reverse
+
+targets="te"
+
+for target in $targets
+do
+   cmd1="featureCounts  -p -s 1 -M -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-antisense-mm-$target.txt"
+   cmd2="featureCounts  -p -s 2 -M -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-sense-mm-$target.txt"
+   cmd3="featureCounts  -p -M -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-both-mm-$target.txt"
+# -O allow multi overlaps
+# -P check fragment length
+# --largestOverlap
+
+   for file in $files; do cmd1="$cmd1 $file"; cmd2="$cmd2 $file"; cmd3="$cmd3 $file"; done
+   $cmd2
+   $cmd1
+   $cmd3
+done
+
+for target in $targets
+do
+   cmd1="featureCounts  -p -s 1 -O --largestOverlap -T 20 -Q 50 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-antisense-$target.txt"
+   cmd2="featureCounts  -p -s 2 -O --largestOverlap -T 20 -Q 50 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-sense-$target.txt"
+   cmd3="featureCounts  -p -O --largestOverlap -T 20 -Q 50 -t $target -g gene_name -a $annotation -o $pwd/countreads_te/results/all-both-$target.txt"
+# -O allow multi overlaps
+# -P check fragment length
+# --largestOverlap
+
+   for file in $files; do cmd1="$cmd1 $file"; cmd2="$cmd2 $file"; cmd3="$cmd3 $file"; done
+   $cmd2
+   $cmd1
+   $cmd3
+done
+
+wait 20
+
+mkdir -p $prefix/countreads
+#!/bin/sh
+cp $pwd/countreads_te/results/* $prefix/countreads
+

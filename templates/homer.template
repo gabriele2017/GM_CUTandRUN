@@ -1,0 +1,19 @@
+#!/bin/bash 
+
+#export PATH="/home/USSR/smb208/Projects/Software/homer/bin/:/home/USSR/smb208/Projects/Software/weblogo:/home/USSR/smb208/Projects/Software/gs/bin:$PATH"
+
+prefix="__PREFIX__"
+
+homer="/home/bornel01/Software/homer/bin"
+
+bed=`ls $prefix/macs2/repl/$1/*_summits.bed`
+
+out=$prefix/homer/$1
+mkdir -p $out
+
+cd $out # Avoid using same tmp file
+
+size=230 # K4
+if [[ $1 = *"k9"* ]]; then size=300; fi
+$homer/findMotifsGenome.pl $bed dm6 $out -size $size -rna
+

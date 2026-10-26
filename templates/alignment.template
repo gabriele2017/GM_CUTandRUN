@@ -1,0 +1,22 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+pwd="__PWD__"
+
+picard="java -Xmx14g -jar /home/bornel01/bin/picard.jar"
+ref="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie/genome"
+
+R1=`ls $prefix/trim/$1.R1_val_1.fq.gz`
+R2=`ls $prefix/trim/$1.R2_val_2.fq.gz`
+
+mkdir -p $prefix/alignment
+
+bowtie -S -y -M 1 --best --strata --fr --minins 10 --maxins 600 -p 20 --chunkmbs 2000 --nomaqround $ref -1 $R1 -2 $R2 | samtools view -Su - | samtools sort -m 80G - >  $prefix/alignment/$1.bam
+
+# -m 1 = only one hit
+# -y slow but increase sensitivity
+# best strata = consider only best stratum (=number of hits with fewest mismatches)
+# -S = sam format
+
+#rm $prefix/alignment/$1.bam
+#rm $prefix/trim/$1*.fq.gz

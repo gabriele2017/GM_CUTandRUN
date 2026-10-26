@@ -1,0 +1,19 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+# Extract multi2ue mappers to use for peak calling
+if [ ! -e "$prefix/alignment/merged/$1.sorted.multi2.bam" ]; then
+	samtools view -q 0 -b $prefix/alignment/merged/$1.sorted.bam > $prefix/alignment/merged/$1.sorted.multi2.bam
+fi
+
+mkdir -p $prefix/macs2/
+mkdir -p $prefix/macs2/{broad,narrow}
+mkdir -p $prefix/macs2/{broad,narrow}/$1
+
+target="$prefix/alignment/merged/$1.sorted.multi2.bam"
+#input=`ls /mnt/scratchb/ghlab/sus/Emma/210719_CR_dmel_ovary_HMs_crispr/alignment/merged/pooled/ovary.Igg.1.multi2.bam` # Created this manually
+
+macs2 callpeak -t $target -f BAMPE -g dm -n $1 --keep-dup auto --outdir $prefix/macs2/broad/$1 -q 0.05 --broad --broad-cutoff 0.1
+macs2 callpeak -t $target -f BAMPE -g dm -n $1 --keep-dup auto --outdir $prefix/macs2/narrow/$1 -q 0.01
+

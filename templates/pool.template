@@ -1,0 +1,26 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+software="/home/USSR/smb208/Projects/Software"
+digits="__DIGITS__"
+
+bios=`ls $prefix/alignment/merged/$1.*.sorted.ddup.bam`
+words=`echo $bios | wc -w`
+
+mkdir -p $prefix/alignment/merged/pooled
+
+rm $prefix/alignment/merged/pooled/$1.bam
+
+if [ $words -ge 2 ]; then
+	samtools merge $prefix/alignment/merged/pooled/$1.bam $bios
+else
+	ln -s $bios $prefix/alignment/merged/pooled/$1.bam
+fi
+samtools index $prefix/alignment/merged/pooled/$1.bam
+
+mkdir -p $prefix/alignment/merged/pooled/counts
+samtools view $prefix/alignment/merged/pooled/$1.bam | grep -v ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/pooled/counts/$1.counts.all.txt
+samtools view $prefix/alignment/merged/pooled/$1.bam | grep -v ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/pooled/counts/$1.counts.uniq.txt
+
+samtools view $prefix/alignment/merged/pooled/$1.bam | grep ERS980029S | awk '$3!="*"' | wc -l > $prefix/alignment/merged/pooled/counts/$1.counts.all.ecoli.txt
+samtools view $prefix/alignment/merged/pooled/$1.bam | grep ERS980029S | awk '$5==255' | wc -l > $prefix/alignment/merged/pooled/counts/$1.counts.uniq.ecoli.txt

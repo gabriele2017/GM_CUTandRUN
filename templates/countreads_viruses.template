@@ -1,0 +1,41 @@
+#!/bin/sh
+
+prefix="__PREFIX__"
+pwd="__PWD__"
+
+annotation="/mnt/scratchc/ghlab/gab/REFERENCE/dmelanogaster6/bowtie/viruses/genome.gtf"
+
+#featureCounts="/home/USSR/smb208/Projects/Software/subread-1.5.0-Linux-x86_64/bin/featureCounts"
+
+# Compute expression of the sense strand
+
+mkdir -p $pwd/countreads_viruses/results
+
+# Using data that will contain many tRNA reads
+files=`ls $prefix/alignment_viruses/mapped/merged/*.bam`
+
+# s1 = forward, s2 = reverse
+
+targets="te"
+
+for target in $targets
+do
+   cmd1="featureCounts -s 1 -M --fraction -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_viruses/results/all-antisense-$target.txt"
+   cmd2="featureCounts -s 2 -M --fraction -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_viruses/results/all-sense-$target.txt"
+   cmd3="featureCounts -M --fraction --primary -O --largestOverlap -T 20 -Q 0 -t $target -g gene_name -a $annotation -o $pwd/countreads_viruses/results/all-both-$target.txt"
+# -O allow multi overlaps
+# -P check fragment length
+# --largestOverlap
+
+
+   for file in $files
+   do 
+      cmd1="$cmd1 $file"
+      cmd2="$cmd2 $file"
+      cmd3="$cmd3 $file"
+   done
+   $cmd2
+   $cmd1
+   $cmd3
+done
+

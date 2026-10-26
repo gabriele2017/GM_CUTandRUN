@@ -1,0 +1,18 @@
+#!/bin/bash 
+
+prefix="__PREFIX__"
+
+techs=`ls $prefix/alignment_viruses/mapped/$1.*.bam`
+words=`echo $techs | wc -w`
+
+mkdir -p $prefix/alignment_viruses/mapped/merged
+
+rm -f $prefix/alignment_viruses/mapped/merged/$1.bam
+
+if [ $words -ge 2 ]; then
+	samtools merge $prefix/alignment_viruses/mapped/merged/$1.bam $techs
+else
+	ln -s $techs $prefix/alignment_viruses/mapped/merged/$1.bam
+fi
+
+samtools index $prefix/alignment_viruses/mapped/merged/$1.bam
