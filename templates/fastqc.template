@@ -1,9 +1,0 @@
-#!/bin/bash 
-
-prefix="__PREFIX__"
-pwd="__PWD__"
-
-file="$pwd/data/$1.fq.gz"
-
-mkdir -p $prefix/fastqc
-fastqc $file -o $prefix/fastqc
